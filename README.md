@@ -1,6 +1,6 @@
 # 0 A.D. Android — 0.28.0-android.4
 
-Native 0AD Games **ARM64, Android 10+**, berdasarkan 0 A.D. 0.28.0.
+Native 0AD Games **ARM64, Android 10+**, Versi Game 0 A.D. 0.28.0.
 Snapshot kode terbaru: **12 November 2026**, versionCode **280004**.
 
 Rincian perilaku dan batasan ada di [dokumentasi port](android-port/README.md).
