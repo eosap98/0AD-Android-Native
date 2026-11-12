@@ -1,0 +1,62 @@
+{
+  "sdl": {
+    "url": "https://www.libsdl.org/release/SDL2-2.32.10.tar.gz",
+    "sha256": "5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165"
+  },
+  "enet": {
+    "url": "https://github.com/lsalzman/enet/archive/refs/tags/v1.3.18.tar.gz",
+    "sha256": "28603c895f9ed24a846478180ee72c7376b39b4bb1287b73877e5eae7d96b0dd"
+  },
+  "fmt": {
+    "url": "https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.tar.gz",
+    "sha256": "bc23066d87ab3168f27cef3e97d545fa63314f5c79df5ea444d41d56f962c6af"
+  },
+  "png": {
+    "url": "https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.50.tar.gz",
+    "sha256": "71158e53cfdf2877bc99bcab33641d78df3f48e6e0daad030afe9cb8c031aa46"
+  },
+  "freetype": {
+    "url": "https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.xz",
+    "sha256": "0550350666d427c74daeb85d5ac7bb353acba5f76956395995311a9c6f063289"
+  },
+  "xml": {
+    "url": "https://download.gnome.org/sources/libxml2/2.13/libxml2-2.13.8.tar.xz",
+    "sha256": "277294cb33119ab71b2bc81f2f445e9bc9435b893ad15bb2cd2b0e859a0ee84a"
+  },
+  "ogg": {
+    "url": "https://github.com/xiph/ogg/archive/refs/tags/v1.3.5.tar.gz",
+    "sha256": "f6f1b04cfa4e98b70ffe775d5e302d9c6b98541f05159af6de2d6617817ed7d6"
+  },
+  "vorbis": {
+    "url": "https://github.com/xiph/vorbis/archive/refs/tags/v1.3.7.tar.gz",
+    "sha256": "270c76933d0934e42c5ee0a54a36280e2d87af1de3cc3e584806357e237afd13"
+  },
+  "openal": {
+    "url": "https://github.com/kcat/openal-soft/archive/refs/tags/1.24.3.tar.gz",
+    "sha256": "7e1fecdeb45e7f78722b776c5cf30bd33934b961d7fd2a11e0494e064cc631ce"
+  },
+  "mbedtls": {
+    "url": "https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v2.28.10.tar.gz",
+    "sha256": "0f2e0525903a89ae1d39ce439d858be66933bda54c5b6102b72a29ed8fe7c088"
+  },
+  "curl": {
+    "url": "https://curl.se/download/curl-8.14.1.tar.xz",
+    "sha256": "f4619a1e2474c4bbfedc88a7c2191209c8334b48fa1f4e53fd584cc12e9120dd"
+  },
+  "sodium": {
+    "url": "https://download.libsodium.org/libsodium/releases/libsodium-1.0.20.tar.gz",
+    "sha256": "ebb65ef6ca439333c2bb41a0c1990587288da07f6c7fd07cb3a18cc18d30ce19"
+  },
+  "icu": {
+    "url": "https://github.com/unicode-org/icu/releases/download/release-76-1/icu4c-76_1-src.tgz",
+    "sha256": "dfacb46bfe4747410472ce3e1144bf28a102feeaa4e3875bac9b4c6cf30f4f3e"
+  },
+  "iconv": {
+    "url": "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.18.tar.gz",
+    "sha256": "3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"
+  },
+  "boost": {
+    "url": "https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.bz2",
+    "sha256": "af57be25cb4c4f4b413ed692fe378affb4352ea50fbe294a11ef548f4d527d89"
+  }
+}

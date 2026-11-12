@@ -1,0 +1,29 @@
+plugins { id 'com.android.application' }
+def nativeBuild = System.getenv('BUILD_ROOT') ?: '/var/tmp/0ad-android-build'
+android {
+    namespace 'org.wildfiregames.zeroad'
+    compileSdk 36
+    buildToolsVersion '36.0.0'
+    defaultConfig {
+        applicationId 'org.wildfiregames.zeroad'
+        minSdk 29
+        targetSdk 35
+        versionCode 280004
+        versionName '0.28.0-android.4'
+        ndk { abiFilters 'arm64-v8a' }
+    }
+    sourceSets.main {
+        java.srcDirs += "$nativeBuild/src/sdl/android-project/app/src/main/java"
+        assets.srcDirs += "$nativeBuild/assets"
+        jniLibs.srcDirs = ["$nativeBuild/jniLibs"]
+    }
+    buildTypes {
+        release { minifyEnabled false }
+    }
+    androidResources { noCompress += ['zip'] }
+    packaging { jniLibs { useLegacyPackaging false } }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

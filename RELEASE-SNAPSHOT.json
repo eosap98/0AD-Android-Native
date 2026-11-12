@@ -1,0 +1,18 @@
+{
+  "version": "0.28.0-android.4",
+  "version_code": 280004,
+  "snapshot_date": "2026-11-12",
+  "upstream_version": "0.28.0",
+  "abi": "arm64-v8a",
+  "min_sdk": 29,
+  "target_sdk": 35,
+  "engine_files_compared": 1974,
+  "modified_engine_files": 14,
+  "engine_patch_sha256": "4691ddf99a790fdfb41308ce335f9f638b2f851dd18cbbdd84419dc21170b320",
+  "last_built_apk_sha256": "7d3fa5f797e26f3a6464b8369ee54660a7dd8b8e040a0eb12ae2dd2bfffc1902",
+  "game_data_in_github": false,
+  "signing_key_in_github": false,
+  "port_implementation_changed_for_backup": false,
+  "full_build_rerun_for_backup": false,
+  "physical_device_tested": false
+}

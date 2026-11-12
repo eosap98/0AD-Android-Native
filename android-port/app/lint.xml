@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- SDL checks Bluetooth permission before initializing BLE devices.
+         This APK does not request Bluetooth permission, so this optional
+         Steam Controller backend remains inactive. OS mouse/keyboard input
+         still works through normal Android input events. -->
+    <issue id="MissingPermission">
+        <ignore path="**/HIDDeviceManager.java" />
+        <ignore path="**/HIDDeviceBLESteamController.java" />
+        <!-- Capture is explicitly rejected by the permission check added in
+             patch-sdl-java.py. The app deliberately has no microphone permission. -->
+        <ignore path="**/SDLAudioManager.java" />
+    </issue>
+</lint>

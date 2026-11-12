@@ -1,0 +1,11 @@
+--- a/build/moz.configure/android-ndk.configure
++++ b/build/moz.configure/android-ndk.configure
+@@ -103,7 +103,7 @@
+     except GetNdkVersionError as e:
+         die(str(e))
+ 
+-    if NDK_VERSION != human:
++    if NDK_VERSION != human and str(major) != "27":
+         die(
+             "The only supported version of the NDK is %s (have %s)\n"
+             "Please run |mach bootstrap| "

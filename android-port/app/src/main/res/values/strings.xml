@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">0 A.D.</string>
+    <string name="launcher_eyebrow">STRATEGI PERADABAN</string>
+    <string name="launcher_title">0 A.D.</string>
+    <string name="launcher_subtitle">EMPIRES ASCENDANT</string>
+    <string name="launcher_tagline">Bangun peradaban. Pimpin pasukan. Tulis sejarah.</string>
+    <string name="play">MULAI GAME</string>
+    <string name="retry">COBA LAGI</string>
+    <string name="preparing">Menyiapkan data game…</string>
+    <string name="checking">Memeriksa data game…</string>
+    <string name="progress">Menyiapkan data game… %1$d%%</string>
+    <string name="ready">Siap bermain</string>
+    <string name="preparation_error">Persiapan gagal: %1$s</string>
+    <string name="controls">Panduan kontrol</string>
+    <string name="controls_title">Kontrol sentuh</string>
+    <string name="controls_message">Geser satu jari — Geser kamera.\n\nTap satu jari pada unit atau bangunan milikmu — Pilih dan tampilkan menu aksinya tanpa ditahan. Tap pada tanah, musuh, atau sasaran kerja untuk memberi perintah sesuai konteks.\n\nTap singkat dengan dua jari bersamaan, lalu lepaskan keduanya — Lepas seluruh pilihan. Dalam mode bangun, ini juga membatalkan bangunan.\n\nTap dua kali dengan satu jari pada unit — Pilih semua unit milikmu yang sejenis dan terlihat di layar. Jarak antartap maksimal 0,3 detik.\n\nTahan sekitar 0,42 detik lalu seret — Buat kotak seleksi. Lepaskan untuk memilih unit di dalamnya.\n\nTahan lalu lepas pada satu unit — Pilih paksa bila tap biasa sedang memberi perintah kerja atau aksi lain.\n\nPutar dua jari melingkar — Putar kamera.\n\nCubit dua jari — Zoom masuk atau keluar.\n\nMode bangun — Tap atau geser untuk mengatur pratinjau. Tap dua kali di lokasi yang berdekatan untuk menaruh bangunan. Untuk tembok, konfirmasi titik awal dan akhir dengan tap dua kali.\n\nMenu dan tombol game — Tap biasa.\n\nTombol kembali Android — Menu atau batal.\n\nSimpan permainan melalui menu sebelum keluar.</string>
+    <string name="understood">MENGERTI</string>
+    <string name="about">Tentang 0 A.D.</string>
+    <string name="about_message">0 A.D. · Empires Ascendant\n0.28.0 · Android.4\n\nGame dan artwork oleh Wildfire Games beserta para kontributor.\n\nPort Android komunitas, bukan rilis Android resmi Wildfire Games.\n\nData lengkap tersedia di aplikasi. Persiapan pertama memerlukan sekitar 2,1 GB ruang kosong tambahan.</string>
+    <string name="launcher_version">0.28.0 · Empires Ascendant</string>
+</resources>

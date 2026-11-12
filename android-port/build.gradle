@@ -1,0 +1,4 @@
+plugins { id 'com.android.application' version '8.7.3' apply false }
+allprojects {
+    layout.buildDirectory = file("${System.getenv('BUILD_ROOT') ?: '/var/tmp/0ad-android-build'}/gradle/${project.name}")
+}

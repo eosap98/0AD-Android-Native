@@ -1,0 +1,448 @@
+--- a/source/main.cpp
++++ b/source/main.cpp
+@@ -98,6 +98,11 @@
+ #include <cstdlib>
+ #include <ctime>
+ #include <exception>
++
++#if OS_ANDROID
++#include "FramePacer.h"
++#include <thread>
++#endif
+ #include <js/RootingAPI.h>
+ #include <js/TypeDecls.h>
+ #include <js/Value.h>
+@@ -304,12 +309,22 @@
+  */
+ inline static void LimitFPS()
+ {
++#if !OS_ANDROID
+ 	if (g_VideoMode.IsVSyncEnabled())
+ 		return;
++#endif
+ 
+ 	const double fpsLimit{
+ 		g_ConfigDB.Get(g_Game && g_Game->IsGameStarted() ? "adaptivefps.session" : "adaptivefps.menu", 0.0)};
+ 
++#if OS_ANDROID
++	// Use display pacing at the refresh-rate target, and a software deadline
++	// only when VSync is off or the requested limit is below the display rate.
++	static AndroidPerformance::FramePacer framePacer;
++	const auto deadline = framePacer.Schedule(AndroidPerformance::FramePacer::Clock::now(), fpsLimit,
++		g_VideoMode.IsVSyncEnabled(), g_VideoMode.GetDesktopFreq());
++	std::this_thread::sleep_until(deadline);
++#else
+ 	// Keep in sync with options.json
+ 	if (fpsLimit < 20.0 || fpsLimit >= 360.0)
+ 		return;
+@@ -322,6 +337,7 @@
+ 		SDL_Delay(wait);
+ 
+ 	lastFrameTime = std::chrono::high_resolution_clock::now();
++#endif
+ }
+ 
+ static int ProgressiveLoad()
+--- a/source/graphics/CameraController.cpp
++++ b/source/graphics/CameraController.cpp
+@@ -41,6 +41,10 @@
+ #include "simulation2/components/ICmpPosition.h"
+ #include "simulation2/components/ICmpRangeManager.h"
+ #include "simulation2/system/Component.h"
++
++#if OS_ANDROID
++#include "AndroidTouchInput.h"
++#endif
+ 
+ #include <algorithm>
+ #include <cmath>
+@@ -192,6 +196,15 @@
+ 	float moveRightward = 0.f;
+ 	float moveForward = 0.f;
+ 
++#if OS_ANDROID
++	const AndroidTouch::CameraMotion touch = AndroidTouch::ConsumeCameraMotion();
++	// Drag the terrain with the finger. Reuse camera smoothing and constraints;
++	// twist changes yaw only, leaving the camera inclination unchanged.
++	moveRightward -= m_ViewDragSpeed * touch.x;
++	moveForward += m_ViewDragSpeed * touch.y;
++	m_RotateY.AddSmoothly(-touch.rotation);
++#endif
++
+ 	if (HotkeyIsPressed("camera.pan"))
+ 	{
+ 		if (m_ViewDragInverted) {
+@@ -204,7 +217,11 @@
+ 		}
+ 	}
+ 
+-	if (g_mouse_active && m_ViewScrollMouseDetectDistance > 0)
++	if (g_mouse_active && m_ViewScrollMouseDetectDistance > 0
++#if OS_ANDROID
++		&& !AndroidTouch::UsingTouch()
++#endif
++	)
+ 	{
+ 		if (g_mouse_x >= g_xres - m_ViewScrollMouseDetectDistance && g_mouse_x < g_xres)
+ 			moveRightward += m_ViewScrollSpeed * deltaRealTime;
+@@ -289,6 +306,12 @@
+ 	if (HotkeyIsPressed("camera.zoom.out"))
+ 		m_Zoom.AddSmoothly(m_ViewZoomSpeed * deltaRealTime);
+ 
++#if OS_ANDROID
++	if (touch.zoom != 0)
++		m_Zoom.SetValueSmoothly(std::clamp(m_Zoom.GetValue() * std::exp(-touch.zoom),
++			m_ViewZoomMin, m_ViewZoomMax));
++#endif
++
+ 	if (m_ConstrainCamera)
+ 		m_Zoom.ClampSmoothly(m_ViewZoomMin, m_ViewZoomMax);
+ 
+--- a/source/lib/sysdep/os/unix/ufilesystem.cpp
++++ b/source/lib/sysdep/os/unix/ufilesystem.cpp
+@@ -49,7 +49,7 @@
+ 	wdirent ent;
+ };
+ 
+-#if OS_ANDROID
++#if OS_ANDROID && defined(ZEROAD_LEGACY_CRYSTAX)
+ 
+ // The Crystax NDK seems to do weird things with opendir etc.
+ // To avoid that, load the symbols directly from the real libc
+--- a/source/gui/CGUI.h
++++ b/source/gui/CGUI.h
+@@ -214,6 +214,9 @@
+ 	 */
+ 	IGUIObject* FindObjectUnderMouse();
+ 
++	/** Hit-test a position without dispatching a mouse move or changing hover state. */
++	IGUIObject* FindObjectAt(const CVector2D& position);
++
+ 	/**
+ 	 * Returns the current screen coordinates of the cursor.
+ 	 */
+--- a/source/gui/CGUI.cpp
++++ b/source/gui/CGUI.cpp
+@@ -460,6 +460,15 @@
+ 	return pNearest;
+ }
+ 
++IGUIObject* CGUI::FindObjectAt(const CVector2D& position)
++{
++	const CVector2D previous = m_MousePos;
++	m_MousePos = position;
++	IGUIObject* object = FindObjectUnderMouse();
++	m_MousePos = previous;
++	return object;
++}
++
+ CSize2D CGUI::GetWindowSize() const
+ {
+ 	return CSize2D{static_cast<float>(g_xres) / g_VideoMode.GetScale(), static_cast<float>(g_yres) / g_VideoMode.GetScale() };
+--- a/source/ps/TouchInput.cpp
++++ b/source/ps/TouchInput.cpp
+@@ -28,6 +28,10 @@
+ #include "maths/Matrix3D.h"
+ #include "ps/Game.h"
+ 
++#if OS_ANDROID
++#include "AndroidTouchInput.h"
++#endif
++
+ #include <SDL_events.h>
+ #include <SDL_mouse.h>
+ #include <cinttypes>
+@@ -60,9 +64,12 @@
+ 
+ bool CTouchInput::IsEnabled()
+ {
+-#if OS_ANDROID || EMULATE_FINGERS_WITH_MOUSE
++#if EMULATE_FINGERS_WITH_MOUSE
+ 	return true;
+ #else
++	// Android uses the frame-based gesture adapter in android-port/native.
++	// The old prototype indexed arrays by arbitrary SDL_FingerID values and
++	// accessed the camera from menus where there is no active game.
+ 	return false;
+ #endif
+ }
+@@ -167,6 +174,9 @@
+ 
+ void CTouchInput::Frame()
+ {
++#if OS_ANDROID
++	AndroidTouch::Frame();
++#endif
+ 	double t = timer_Time();
+ 	if (m_State == STATE_FIRST_TOUCH && t > m_FirstTouchTime + 1.0)
+ 	{
+@@ -189,6 +199,9 @@
+ 
+ InReaction CTouchInput::HandleEvent([[maybe_unused]] const SDL_Event_* ev)
+ {
++#if OS_ANDROID
++	AndroidTouch::OtherInput(ev);
++#endif
+ 	if (!IsEnabled())
+ 		return IN_PASS;
+ 
+--- a/source/ps/UserReport.cpp
++++ b/source/ps/UserReport.cpp
+@@ -24,6 +24,9 @@
+ #include "lib/debug.h"
+ #include "lib/external_libraries/curl.h"
+ #include "lib/external_libraries/zlib.h"
++#if OS_ANDROID
++#include "lib/file/file_system.h"
++#endif
+ #include "lib/os_path.h"
+ #include "lib/path.h"
+ #include "lib/secure_crt.h"
+@@ -110,6 +113,11 @@
+ 
+ 		m_Curl = curl_easy_init();
+ 		ENSURE(m_Curl);
++#if OS_ANDROID
++		const char* caPath = DirectoryExists(OsPath("/apex/com.android.conscrypt/cacerts")) ?
++			"/apex/com.android.conscrypt/cacerts" : "/system/etc/security/cacerts";
++		curl_easy_setopt(m_Curl, CURLOPT_CAPATH, caPath);
++#endif
+ 
+ #if DEBUG_UPLOADS
+ 		curl_easy_setopt(m_Curl, CURLOPT_VERBOSE, 1L);
+--- a/source/ps/ModIo.cpp
++++ b/source/ps/ModIo.cpp
+@@ -122,6 +122,12 @@
+ 
+ 	m_Curl = curl_easy_init();
+ 	ENSURE(m_Curl);
++#if OS_ANDROID
++	// Android's trust store is not in curl's Unix /etc/ssl locations.
++	const char* caPath = DirectoryExists(OsPath("/apex/com.android.conscrypt/cacerts")) ?
++		"/apex/com.android.conscrypt/cacerts" : "/system/etc/security/cacerts";
++	curl_easy_setopt(m_Curl, CURLOPT_CAPATH, caPath);
++#endif
+ 
+ 	// Capture error messages
+ 	curl_easy_setopt(m_Curl, CURLOPT_ERRORBUFFER, m_ErrorBuffer);
+--- a/source/ps/GameSetup/Paths.cpp
++++ b/source/ps/GameSetup/Paths.cpp
+@@ -65,13 +65,16 @@
+ 
+ #if OS_ANDROID
+ 
+-		const OsPath appdata = OsPath("/sdcard/0ad/appdata");
++		const char* androidRoot = getenv("ZEROAD_ROOT");
++		ENSURE(androidRoot && *androidRoot);
++		const OsPath appdata(androidRoot);
+ 
+ 		// We don't make the game vs. user data distinction on Android
+ 		m_gameData = appdata/"data"/"";
+ 		m_userData = m_gameData;
+ 		m_config = appdata/"config"/"";
+-		m_cache = appdata/"cache"/"";
++		const char* androidCache = getenv("ZEROAD_CACHE");
++		m_cache = androidCache && *androidCache ? OsPath(androidCache)/"" : appdata/"cache"/"";
+ 		m_logs = appdata/"logs"/"";
+ 
+ #elif OS_WIN
+@@ -169,7 +172,9 @@
+ /*static*/ OsPath Paths::Root(const OsPath& argv0)
+ {
+ #if OS_ANDROID
+-	return OsPath("/sdcard/0ad"); // TODO: this is kind of bogus
++	const char* androidRoot = getenv("ZEROAD_ROOT");
++	ENSURE(androidRoot && *androidRoot);
++	return OsPath(androidRoot);
+ #else
+ 
+ 	// get full path to executable
+--- a/source/ps/GameSetup/HWDetect.cpp
++++ b/source/ps/GameSetup/HWDetect.cpp
+@@ -23,7 +23,9 @@
+ #include "lib/debug.h"
+ #include "lib/external_libraries/curl.h"
+ #include "lib/external_libraries/enet.h"
++#if CONFIG2_LOBBY
+ #include "lib/external_libraries/gloox.h"
++#endif
+ #include "lib/external_libraries/png.h"
+ #include "lib/external_libraries/libsdl.h"
+ #include "lib/path.h"
+@@ -209,7 +211,9 @@
+ 	appendLibrary(LibraryReporter{rq, "boost"}.Add("version", BOOST_VERSION).MakeReport());
+ 	appendLibrary(LibraryReporter{rq, "enet"}.Add("version", std::to_string(ENET_VERSION)).MakeReport());
+ 	appendLibrary(LibraryReporter{rq, "fmt"}.Add("version", FMT_VERSION).MakeReport());
++#if CONFIG2_LOBBY
+ 	appendLibrary(LibraryReporter{rq, "gloox"}.Add("version", gloox_version()).MakeReport());
++#endif
+ 	appendLibrary(LibraryReporter{rq, "libicu"}.Add("version", U_ICU_VERSION).MakeReport());
+ 	appendLibrary(LibraryReporter{rq, "libcurl"}.Add("version", std::string(curl_version())).MakeReport());
+ #if CONFIG2_AUDIO
+--- a/source/ps/GameSetup/GameSetup.cpp
++++ b/source/ps/GameSetup/GameSetup.cpp
+@@ -145,6 +145,7 @@
+ 
+ ErrorReactionInternal psDisplayError(const wchar_t* /*text*/, size_t /*flags*/)
+ {
++#if !OS_ANDROID
+ 	// If we're fullscreen, then sometimes (at least on some particular drivers on Linux)
+ 	// displaying the error dialog hangs the desktop since the dialog box is behind the
+ 	// fullscreen window. So we just force the game to windowed mode before displaying the dialog.
+@@ -159,6 +160,7 @@
+ 			reentering = false;
+ 		}
+ 	}
++#endif // Android dialogs do not require a desktop window mode change.
+ 
+ 	// We don't actually implement the error display here, so return appropriately
+ 	return ERI_NOT_IMPLEMENTED;
+--- a/source/renderer/Renderer.cpp
++++ b/source/renderer/Renderer.cpp
+@@ -75,6 +75,10 @@
+ #include "tools/atlas/GameInterface/GameLoop.h"
+ #include "tools/atlas/GameInterface/View.h"
+ 
++#if OS_ANDROID
++#include "AndroidSceneBuffer.h"
++#endif
++
+ #include <cstdlib>
+ #include <string>
+ #include <unordered_map>
+@@ -287,6 +291,10 @@
+ 	/// Texture manager
+ 	CTextureManager textureManager;
+ 
++#if OS_ANDROID
++	AndroidPerformance::SceneBuffer androidSceneBuffer;
++#endif
++
+ 	CVertexBufferManager vertexBufferManager;
+ 
+ 	/// Time manager
+@@ -527,6 +535,18 @@
+ 
+ 		Renderer::Backend::IFramebuffer* framebuffer = nullptr;
+ 		Renderer::Backend::IDeviceCommandContext::Rect viewportRect{};
++
++#if OS_ANDROID
++		const AndroidPerformance::Extent displaySize{
++			static_cast<uint32_t>(m_Width), static_cast<uint32_t>(m_Height)};
++		Renderer::Backend::IFramebuffer* scaledScene = nullptr;
++		// Postprocessing and silhouettes require their original depth/stencil
++		// path. The mobile profile disables both to avoid those extra passes.
++		if (m_ScreenShotType == ScreenShotType::NONE && !GetPostprocManager().IsEnabled() &&
++			!g_RenderingOptions.GetSilhouettes())
++			scaledScene = m->androidSceneBuffer.Prepare(m->device, m->textureManager,
++				displaySize, g_ConfigDB.Get("android.scene.shortedge", 720));
++#endif
+ 
+ 		CPostprocManager& postprocManager = GetPostprocManager();
+ 		if (postprocManager.IsEnabled())
+@@ -557,10 +577,41 @@
+ 			viewportRect.height = m_Height;
+ 		}
+ 
++#if OS_ANDROID
++		if (scaledScene)
++		{
++			framebuffer = scaledScene;
++			viewportRect.width = scaledScene->GetWidth();
++			viewportRect.height = scaledScene->GetHeight();
++		}
++#endif
++
+ 		m->deviceCommandContext->BeginFramebufferPass(framebuffer);
+ 		m->deviceCommandContext->SetViewports(1, &viewportRect);
+ 
+ 		g_Game->GetView()->Render(m->deviceCommandContext.get());
++
++#if OS_ANDROID
++		if (scaledScene)
++		{
++			// Keep depth-dependent unit overlays with the 3D scene. Only the HUD
++			// and canvas UI are drawn after restoring the full display viewport.
++			g_Game->GetView()->RenderOverlays(m->deviceCommandContext.get());
++			m->deviceCommandContext->EndFramebufferPass();
++			auto* backbuffer = m->device->GetCurrentBackbuffer(
++				Renderer::Backend::AttachmentLoadOp::DONT_CARE,
++				Renderer::Backend::AttachmentStoreOp::STORE,
++				Renderer::Backend::AttachmentLoadOp::DONT_CARE,
++				Renderer::Backend::AttachmentStoreOp::DONT_CARE);
++			m->deviceCommandContext->BeginFramebufferPass(backbuffer);
++			viewportRect.width = m_Width;
++			viewportRect.height = m_Height;
++			m->deviceCommandContext->SetViewports(1, &viewportRect);
++			m->deviceCommandContext->SetScissors(0, nullptr);
++			CCanvas2D canvas(m_Width, m_Height, 1.0f, m->deviceCommandContext.get());
++			m->androidSceneBuffer.Draw(canvas, displaySize);
++		}
++#endif
+ 
+ 		if (postprocManager.IsEnabled())
+ 		{
+@@ -588,7 +639,10 @@
+ 			m->deviceCommandContext->SetViewports(1, &viewportRect);
+ 		}
+ 
+-		g_Game->GetView()->RenderOverlays(m->deviceCommandContext.get());
++#if OS_ANDROID
++		if (!scaledScene)
++#endif
++			g_Game->GetView()->RenderOverlays(m->deviceCommandContext.get());
+ 
+ 		g_Game->GetView()->GetCinema()->Render();
+ 	}
+--- a/source/renderer/backend/gl/DeviceCommandContext.cpp
++++ b/source/renderer/backend/gl/DeviceCommandContext.cpp
+@@ -132,10 +132,23 @@
+ 	const uint32_t dataOffset, const uint32_t dataSize,
+ 	const CDeviceCommandContext::UploadBufferFunction& uploadFunction)
+ {
+-	ENSURE(dataOffset < dataSize);
++	ENSURE(dataOffset + dataSize <= bufferSize);
+ 	// Tell the driver that it can reallocate the whole VBO
+ 	glBufferDataARB(target, bufferSize, nullptr, GL_DYNAMIC_DRAW);
+ 	ogl_WarnIfError();
++
++#if CONFIG2_GLES
++	// GL_OES_mapbuffer is optional (and absent on Adreno 618). Upload through
++	// GLES 2 core entry points when the extension was not loaded.
++	if (!glMapBufferARB || !glUnmapBufferARB)
++	{
++		std::vector<u8> data(dataSize);
++		uploadFunction(data.data());
++		glBufferSubDataARB(target, dataOffset, dataSize, data.data());
++		ogl_WarnIfError();
++		return;
++	}
++#endif
+ 
+ 	while (true)
+ 	{
+@@ -259,6 +272,11 @@
+ 		// Currently we don't support upload buffers for GL.
+ 		if (type == CBuffer::Type::UPLOAD)
+ 			continue;
++#if CONFIG2_GLES
++		// The GLES 2 backend uses individual uniforms, not uniform buffers.
++		if (type == CBuffer::Type::UNIFORM)
++			continue;
++#endif
+ 		const GLenum target = BufferTypeToGLTarget(type);
+ 		const GLuint handle = 0;
+ 		m_BoundBuffers[index].first = target;
+--- a/source/renderer/backend/gl/Texture.cpp
++++ b/source/renderer/backend/gl/Texture.cpp
+@@ -213,8 +213,8 @@
+ 			break;
+ #if CONFIG2_GLES
+ 		// GLES requires pixel type == UNSIGNED_SHORT or UNSIGNED_INT for depth.
+-		case Format::D16_UNORM: FALLTHROUGH;
+-		case Format::D24_UNORM: FALLTHROUGH;
++		case Format::D16_UNORM: [[fallthrough]];
++		case Format::D24_UNORM: [[fallthrough]];
+ 		case Format::D32_SFLOAT:
+ 			internalFormat = GL_DEPTH_COMPONENT;
+ 			pixelFormat = GL_DEPTH_COMPONENT;
