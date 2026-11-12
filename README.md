@@ -60,7 +60,7 @@ mengecualikan keduanya jika kelak dipakai untuk build lokal.
 ## Lisensi
 
 0 A.D. / Pyrogenesis adalah karya Wildfire Games dan para kontributor.
-Port ini merupakan proyek komunitas, bukan rilis Android resmi.
+Port ini bukan rilis Android resmi.
 Source engine dan modifikasinya mengikuti GPL-2.0-or-later; bagian engine
 lain dapat mengikuti lisensi yang dijelaskan di
 [licenses/LICENSE.md](licenses/LICENSE.md). Lisensi dependensi dicantumkan
