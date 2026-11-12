@@ -1,12 +1,9 @@
 # 0 A.D. Android — 0.28.0-android.4
 
-Port komunitas untuk **ARM64, Android 10+**, berdasarkan 0 A.D. 0.28.0.
+Native 0AD Games **ARM64, Android 10+**, berdasarkan 0 A.D. 0.28.0.
 Snapshot kode terbaru: **12 November 2026**, versionCode **280004**.
 
-Versi ini mempertahankan fullscreen, pemilihan unit/HUD dengan satu tap,
-kontrol dua jari, serta profil grafis dengan target 60 FPS.
-Target tersebut belum diukur di perangkat fisik. Rincian perilaku dan batasan
-ada di [dokumentasi port](android-port/README.md).
+Rincian perilaku dan batasan ada di [dokumentasi port](android-port/README.md).
 
 ## Isi repositori
 
@@ -21,7 +18,7 @@ SDK/NDK, cache build, atau keystore.** Source engine upstream juga diambil
 terpisah; seluruh perubahan port terhadap source tersebut tersedia sebagai
 `android-port/patches/engine-android.patch`.
 
-## Build di PC baru
+## Build
 
 Gunakan **Linux x86_64**. Untuk Windows, gunakan Ubuntu melalui **WSL2** dan
 pasang toolchain Linux di dalam WSL. Ikuti [BUILD-PC-BARU.md](BUILD-PC-BARU.md)
